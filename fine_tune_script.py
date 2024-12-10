@@ -17,8 +17,19 @@ import random
 import pandas as pd
 from IPython.display import display
 import evaluate
+import logging
 
 #_______________________________________________________________________
+
+# Configurer le logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 seed = 69
 set_seed(seed)
@@ -40,10 +51,10 @@ def compute_metrics(eval_pred):
 
 def load_model(model_path):
     n_gpus = torch.cuda.device_count()
-    max_memory = f'{15000}MB'
+    max_memory = f'{32000}MB'
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        device_map="auto",
+        device_map="cuda:0",
         max_memory={i: max_memory for i in range(n_gpus)},
     )
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -170,13 +181,34 @@ eval_dataset = preprocess_dataset(tokenizer, max_length, seed, eval_dataset)
 
 #_______________________________________________________________________
 
+# Setup directories upfront
+output_dir = "E:/AI/projets/LLM project efrei/llm_project_M2/results/final_checkpoint"
+output_merged_dir = "E:/AI/projets/LLM project efrei/llm_project_M2/results/final_checkpoint_merged"
+
+# Create directories if not exists
+for dir_path in [output_dir, output_merged_dir]:
+    os.makedirs(dir_path, exist_ok=True)
+
+#_______________________________________________________________________
+
 def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
+    logger.info("Starting the training process.")
+
+    # Enable gradient checkpointing
     model.gradient_checkpointing_enable()
+    logger.info("Gradient checkpointing enabled.")
+
+    # Prepare model for k-bit training and locate linear modules
     model = prepare_model_for_kbit_training(model)
     modules = find_all_linear_names(model)
+    logger.info(f"Model prepared for k-bit training. Located linear modules: {modules}")
+
+    # Obtain PEFT model
     peft_config = create_peft_config(modules)
     model = get_peft_model(model, peft_config)
-    print_trainable_parameters(model)
+    logger.info("PEFT model obtained.")
+
+    # Initialize Trainer
     trainer = Trainer(
         model=model,
         train_dataset=train_dataset,
@@ -184,52 +216,44 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
         args=TrainingArguments(
             per_device_train_batch_size=1,
             gradient_accumulation_steps=4,
-            warmup_steps=2,
-            max_steps=15,
+            warmup_steps=0,
+            max_steps=1,
             learning_rate=2e-4,
-            fp16=False,
+            fp16=True,
             logging_steps=1,
             output_dir="outputs",
             optim="paged_adamw_8bit",
-            eval_strategy="epoch",  # Enable evaluation
+            eval_strategy="no",
         ),
         data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),
-        compute_metrics=compute_metrics,  # Metric computation function
+        compute_metrics=compute_metrics,
     )
+    logger.info("Trainer initialized.")
+
     model.config.use_cache = False
 
     # Training
-    print("Training...")
     train_result = trainer.train()
-    metrics = train_result.metrics
-    trainer.log_metrics("train", metrics)
-    trainer.save_metrics("train", metrics)
-    #trainer.save_state()
-    print(metrics)
+    logger.info(f"Training completed. Metrics: {train_result.metrics}")
 
-    # Evaluation
-    print("Evaluating...")
+    # Evaluate
     eval_result = trainer.evaluate()
-    print(eval_result)
-        
-    # Saving model
-    print("Saving last checkpoint of the model...")
-    os.makedirs(output_dir, exist_ok=True)
+    logger.info(f"Evaluation completed. Results: {eval_result}")
+
+    # Save trained model
     trainer.model.save_pretrained(output_dir)
+
+    # Clear resources
     del model
     del trainer
     torch.cuda.empty_cache()
+    logger.info("Training process completed and resources cleaned up.")
 
-#_______________________________________________________________________
-
-output_dir = "E:/AI/projets/LLM project efrei/llm_project_M2/results/final_checkpoint"
+# Run training process
 train(model, tokenizer, train_dataset, eval_dataset, output_dir)
 
-# Merge weights
-model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="auto", torch_dtype=torch.bfloat16)
+# Merge weights if needed
+model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="cuda:0", torch_dtype=torch.bfloat16)
 model = model.merge_and_unload()
-output_merged_dir = "E:/AI/projets/LLM project efrei/llm_project_M2/results/final_checkpoint_merged"
-os.makedirs(output_merged_dir, exist_ok=True)
 model.save_pretrained(output_merged_dir, safe_serialization=True)
-tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.save_pretrained(output_merged_dir)
