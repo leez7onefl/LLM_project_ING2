@@ -19,6 +19,9 @@ from IPython.display import display
 import evaluate
 import logging
 
+import warnings
+warnings.filterwarnings("ignore")
+
 #_______________________________________________________________________
 
 # Configurer le logger
@@ -31,9 +34,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
+
 seed = 69
 set_seed(seed)
 n_gpus = torch.cuda.device_count()
+print(torch.cuda.get_device_name(0))
+
 print(torch.__version__)
 print(torch.cuda.is_available())
 print("NOMBRE DE GPU : ", n_gpus)
@@ -51,9 +58,11 @@ def compute_metrics(eval_pred):
 
 def load_model(model_path):
     n_gpus = torch.cuda.device_count()
-    max_memory = f'{32000}MB'
+    max_memory = f'{10000}MB'
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
+        load_in_8bit=True,
+        torch_dtype=torch.float16,
         device_map="cuda:0",
         max_memory={i: max_memory for i in range(n_gpus)},
     )
@@ -109,6 +118,7 @@ print(create_prompt_formats(dataset[0])["text"])
 def get_max_length(model):
     conf = model.config
     max_length = getattr(conf, 'n_positions', None) or getattr(conf, 'max_position_embeddings', None) or getattr(conf, 'seq_length', None) or 1024
+    print(max_length)
     return max_length
 
 #_______________________________________________________________________
@@ -131,10 +141,10 @@ def preprocess_dataset(tokenizer, max_length, seed, dataset):
 
 def create_peft_config(modules):
     return LoraConfig(
-        r=16,
-        lora_alpha=64,
+        r=8,
+        lora_alpha=32,
         target_modules=modules,
-        lora_dropout=0.1,
+        lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
     )
@@ -170,7 +180,7 @@ model, tokenizer = load_model(model_path)
 max_length = get_max_length(model)
 
 # Split the dataset into training and evaluation sets
-split_ratio = 0.3
+split_ratio = 0.1
 splits = dataset.train_test_split(test_size=split_ratio, seed=seed)
 train_dataset = splits['train']
 eval_dataset = splits['test']
@@ -195,15 +205,25 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
     logger.info("Starting the training process.")
 
     # Enable gradient checkpointing
-    model.gradient_checkpointing_enable()
-    logger.info("Gradient checkpointing enabled.")
+    # model.gradient_checkpointing_enable()
+    # logger.info("Gradient checkpointing enabled.")
 
     # Prepare model for k-bit training and locate linear modules
     model = prepare_model_for_kbit_training(model)
-    modules = find_all_linear_names(model)
-    logger.info(f"Model prepared for k-bit training. Located linear modules: {modules}")
+
+    # Freeze all layers except the last one
+    for name, param in model.named_parameters():
+        if "lm_head" not in name:  # Change "lm_head" according to the name of the final layer in your model
+            param.requires_grad = False
+        else:
+            param.requires_grad = True
+
+    # Output the trainable parameters (this should now be only the last layer)
+    print_trainable_parameters(model)
 
     # Obtain PEFT model
+    modules = find_all_linear_names(model)
+    logger.info(f"Model prepared for k-bit training. Located linear modules: {modules}")
     peft_config = create_peft_config(modules)
     model = get_peft_model(model, peft_config)
     logger.info("PEFT model obtained.")
@@ -218,9 +238,9 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
             gradient_accumulation_steps=4,
             warmup_steps=0,
             max_steps=1,
-            learning_rate=2e-4,
+            learning_rate=1e-5,
             fp16=True,
-            logging_steps=1,
+            logging_steps=10,
             output_dir="outputs",
             optim="paged_adamw_8bit",
             eval_strategy="no",
@@ -233,10 +253,12 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
     model.config.use_cache = False
 
     # Training
+    logger.info(f"BEGINNING TRAINING")
     train_result = trainer.train()
     logger.info(f"Training completed. Metrics: {train_result.metrics}")
 
     # Evaluate
+    logger.info(f"BEGINNING EVALUATION")
     eval_result = trainer.evaluate()
     logger.info(f"Evaluation completed. Results: {eval_result}")
 
@@ -248,6 +270,8 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
     del trainer
     torch.cuda.empty_cache()
     logger.info("Training process completed and resources cleaned up.")
+
+#_______________________________________________________________________
 
 # Run training process
 train(model, tokenizer, train_dataset, eval_dataset, output_dir)
