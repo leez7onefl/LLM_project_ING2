@@ -54,7 +54,7 @@ accuracy_metric = evaluate.load("accuracy")
 
 #_______________________________________________________________________
 
-   def compute_metrics(eval_pred):
+def compute_metrics(eval_pred):
        logits, labels = eval_pred
        # Assuming logits are (batch_size, seq_len, vocab_size)
        predictions = np.argmax(logits, axis=-1)
