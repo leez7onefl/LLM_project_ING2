@@ -277,7 +277,7 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
 train(model, tokenizer, train_dataset, eval_dataset, output_dir)
 
 # Merge weights if needed
-model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="cuda:0", torch_dtype=torch.bfloat16)
+model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="cuda:0") # removed torch_dtype=torch.bfloat16 because of redundancy because of load in 8bit
 model = model.merge_and_unload()
 model.save_pretrained(output_merged_dir, safe_serialization=True)
 tokenizer.save_pretrained(output_merged_dir)
