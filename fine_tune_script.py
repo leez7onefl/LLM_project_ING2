@@ -1,3 +1,5 @@
+torch.cuda.empty_cache()
+
 from datasets import load_dataset
 from functools import partial
 import os
