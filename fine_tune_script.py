@@ -70,7 +70,7 @@ def compute_metrics(eval_pred):
 
 def load_model(model_path):
     n_gpus = torch.cuda.device_count()
-    max_memory = f'{10000}MB'
+    max_memory = f'{6000}MB'
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         quantization_config=quantization_config,
