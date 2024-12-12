@@ -9,7 +9,8 @@ from transformers import (
     set_seed,
     Trainer,
     TrainingArguments,
-    DataCollatorForLanguageModeling
+    DataCollatorForLanguageModeling,
+    BitsAndBytesConfig
 )
 
 import numpy as np
@@ -36,6 +37,8 @@ logger = logging.getLogger(__name__)
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
 
+quantization_config = BitsAndBytesConfig(load_in_4bit=True)
+
 seed = 69
 set_seed(seed)
 n_gpus = torch.cuda.device_count()
@@ -61,8 +64,8 @@ def load_model(model_path):
     max_memory = f'{10000}MB'
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        load_in_8bit=True,
-        torch_dtype=torch.float16,
+        quantization_config=quantization_config,
+        torch_dtype="auto",
         device_map="cuda:0",
         max_memory={i: max_memory for i in range(n_gpus)},
     )
@@ -73,7 +76,7 @@ def load_model(model_path):
 
 #_______________________________________________________________________
 
-dataset = load_dataset('json', data_files='E:/AI/projets/LLM project efrei/llm_project_M2/data/data_code.json', split='train')
+dataset = load_dataset('json', data_files='E:/AI/projets/LLM project efrei/llm_project_M2/data/data_code.json')
 
 print(f'Number of prompts: {len(dataset)}')
 print(f'Column names are: {dataset.column_names}')
