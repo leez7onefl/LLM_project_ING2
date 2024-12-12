@@ -247,7 +247,7 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
         eval_dataset=eval_dataset,
         args=TrainingArguments(
             per_device_train_batch_size=1,
-            gradient_accumulation_steps=4,
+            gradient_accumulation_steps=4, #increase to lower vram usage
             warmup_steps=2,
             max_steps=10,
             #fp16=True
