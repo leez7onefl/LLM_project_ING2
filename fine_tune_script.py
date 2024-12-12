@@ -239,7 +239,7 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
             warmup_steps=0,
             max_steps=1,
             learning_rate=1e-5,
-            fp16=True,
+            #fp16=True,          --> removed because redundancy with "load in 8bit"
             logging_steps=10,
             output_dir="outputs",
             optim="paged_adamw_8bit",
