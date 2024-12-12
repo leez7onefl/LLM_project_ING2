@@ -12,10 +12,11 @@ model = AutoModelForCausalLM.from_pretrained(
 
 model.cuda()
 
-inputs = tokenizer("import torch\nimport torch.nn as nn", return_tensors="pt").to(model.device)
+prompt = "import torch\nimport torch.nn as nn"
 
+inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 tokens = model.generate(
-  **inputs,
+  input,
   max_new_tokens=48,
   temperature=0.2,
   do_sample=True,
