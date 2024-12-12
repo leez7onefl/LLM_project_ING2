@@ -248,13 +248,14 @@ def train(model, tokenizer, train_dataset, eval_dataset, output_dir):
         args=TrainingArguments(
             per_device_train_batch_size=1,
             gradient_accumulation_steps=4,
-            warmup_steps=0,
-            max_steps=1,
+            warmup_steps=2,
+            max_steps=10,
+            #fp16=True
             learning_rate=1e-5,
-            #fp16=True,          --> removed because redundancy with "load in 8bit"
             logging_steps=10,
             output_dir="outputs",
             optim="paged_adamw_8bit",
+	        weight_decay=0.01, 
             eval_strategy="no",
         ),
         data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),
