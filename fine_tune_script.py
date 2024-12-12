@@ -52,10 +52,17 @@ accuracy_metric = evaluate.load("accuracy")
 
 #_______________________________________________________________________
 
-def compute_metrics(eval_pred):
-    logits, labels = eval_pred
-    predictions = np.argmax(logits, axis=-1)
-    return accuracy_metric.compute(predictions=predictions, references=labels)
+   def compute_metrics(eval_pred):
+       logits, labels = eval_pred
+       # Assuming logits are (batch_size, seq_len, vocab_size)
+       predictions = np.argmax(logits, axis=-1)
+       predictions = predictions.flatten()
+       labels = labels.flatten()
+       # Masking out padding predictions and labels for metric calculation, if needed
+       valid_indices = labels != -100
+       predictions = predictions[valid_indices]
+       labels = labels[valid_indices]
+       return accuracy_metric.compute(predictions=predictions, references=labels)
 
 #_______________________________________________________________________
 
