@@ -9,4 +9,5 @@ ipython
 numpy==1.26.4
 evaluate
 scikit_learn
-bitsandbytes
+bitsandbytes>=0.39.0
+accelerate
