@@ -41,13 +41,22 @@ To perform inference with the LLM model, follow these steps:
    git clone https://github.com/leez7onefl/llm_project_M2.git
    ```
 
-2. **Build the Project**: 
+2. **Download Model Checkpoint**:
+
+   Visit the appropriate page on Hugging Face to download the `final_checkpoint_merged` file necessary for running inference. Ensure you have access to the file, and download it to your local machine.
+
+3. **Place the Checkpoint**:
+
+   Move the `final_checkpoint_merged` file into the appropriate directory within the cloned repository as specified by the project documentation.
+
+4. **Build the Project**: 
 
    Navigate to the repository directory and double-click on `build.bat` to set up the environment.
-   
-3. **Launch the Inference**: 
+
+5. **Launch the Inference**: 
 
    Double-click on `launch.bat` to start inference with the model.
+   
 ---
 ### Fine-tuning
 
@@ -71,11 +80,6 @@ To fine-tune the LLM model, follow these steps:
    python fine_tune_script.py
    ```
 
-## Additional Information
-
-- If you encounter any issues, please check that your environment meets all prerequisites and consider reviewing error logs for more details.
-- Feel free to open an issue in this repository if problems persist.
-
 # RESULTS
 
 500 epochs
@@ -93,4 +97,7 @@ To fine-tune the LLM model, follow these steps:
 2000 epochs
 ![2000_steps_training_progression_plot](https://github.com/user-attachments/assets/176b8a5d-7d84-49be-914c-ec9fdc4b23cd)
 
+## Additional Information
 
+- If you encounter any issues, please check that your environment meets all prerequisites and consider reviewing error logs for more details.
+- Feel free to open an issue in this repository if problems persist.
