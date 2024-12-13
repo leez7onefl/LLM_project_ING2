@@ -75,3 +75,22 @@ To fine-tune the LLM model, follow these steps:
 
 - If you encounter any issues, please check that your environment meets all prerequisites and consider reviewing error logs for more details.
 - Feel free to open an issue in this repository if problems persist.
+
+# RESULTS
+
+500 epochs
+![500_steps_training_progression_plot](https://github.com/user-attachments/assets/ffc23a99-72c4-46a3-af4d-6383400a6d34)
+---
+
+1000 epochs
+![1000_steps_training_progression_plot](https://github.com/user-attachments/assets/2b32861b-fc70-4ece-adba-66ca64653179)
+---
+
+1500 epochs
+![1500_steps_training_progression_plot](https://github.com/user-attachments/assets/0a70716b-0862-4fd6-affc-608f5e12c6c8)
+---
+
+2000 epochs
+![2000_steps_training_progression_plot](https://github.com/user-attachments/assets/176b8a5d-7d84-49be-914c-ec9fdc4b23cd)
+
+
