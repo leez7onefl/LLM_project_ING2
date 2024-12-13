@@ -11,3 +11,4 @@ evaluate
 scikit_learn
 bitsandbytes>=0.39.0
 accelerate
+streamlit
