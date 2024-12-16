@@ -225,7 +225,7 @@ if __name__ == "__main__":
     accuracy_metric = evaluate.load("accuracy")
 
     # Load dataset using pandas
-    dataset_path = 'E:/AI/projets/LLM project efrei/llm_project_M2/data/data_code.json'
+    dataset_path = './data/data_code.json'
     df = pd.read_json(dataset_path)
 
     print(f'Number of prompts: {len(df)}')
@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
     print(create_prompt_formats(df.iloc[0])[["text"]])
 
-    model_path = "E:/AI/projets/LLM project efrei/llm_project_M2/model/stable-code-3b"
+    model_path = "./model/stable-code-3b"
     model, tokenizer = load_model(model_path)
     max_length = get_max_length(model)
     print("\n"+"MODEL MAX LENGTH : "+str(max_length))
@@ -256,8 +256,8 @@ if __name__ == "__main__":
     train_dataset = Dataset.from_pandas(train_dataset)
     eval_dataset = Dataset.from_pandas(eval_dataset)
 
-    output_dir = "E:/AI/projets/LLM project efrei/llm_project_M2/results/final_checkpoint"
-    output_merged_dir = "E:/AI/projets/LLM project efrei/llm_project_M2/results/final_checkpoint_merged"
+    output_dir = "./results/final_checkpoint"
+    output_merged_dir = "./results/final_checkpoint_merged"
 
     for dir_path in [output_dir, output_merged_dir]:
         os.makedirs(dir_path, exist_ok=True)
