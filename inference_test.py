@@ -18,8 +18,8 @@ def load_model(model_path, tokenizer_path):
     return model, tokenizer
 
 # Load the model and tokenizer
-local_model_path = "E:/AI/projets/LLM project efrei/llm_project_M2/results/final_checkpoint_merged"
-local_tokenizer_path = "E:/AI/projets/LLM project efrei/llm_project_M2/model/stable-code-3b"
+local_model_path = "./results/final_checkpoint_merged"
+local_tokenizer_path = "./model/stable-code-3b"
 model, tokenizer = load_model(local_model_path, local_tokenizer_path)
 model.cuda()
 
