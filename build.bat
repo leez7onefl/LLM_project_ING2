@@ -1,7 +1,7 @@
 @echo off
 
 :: Path to your project directory
-set "PROJECT_DIR=E:\AI\projets\LLM project efrei\llm_project_M2"
+set "PROJECT_DIR=%~dp0"
 
 :: Path to the virtual environment directory
 set "VENV_DIR=%PROJECT_DIR%\myenv"
